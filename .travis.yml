@@ -1,0 +1,14 @@
+language: rust
+
+rust:
+  - 1.22.1
+
+os:
+  - osx
+  - linux
+
+script: cargo test
+
+notifications:
+  email:
+    - andrew@mackenzie-serres.net
