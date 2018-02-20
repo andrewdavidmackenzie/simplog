@@ -36,7 +36,6 @@ impl SimpleLogger {
                 log_level: level
             })
         }).unwrap();
-        println!("Logging at level {}", level);
     }
 }
 
