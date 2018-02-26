@@ -8,9 +8,8 @@ rust:
   - stable
   - 1.22.1
 
-sudo: true
-before_install:
-  - sudo apt-get update
+sudo: false
+
 addons:
   apt:
     packages:
