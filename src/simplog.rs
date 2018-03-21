@@ -56,7 +56,7 @@ impl Log for SimpleLogger {
 
     fn log(&self, record: &LogRecord) {
         if self.enabled(record.metadata()) {
-            println!("{} - {}", record.level(), record.args());
+            println!("{}\t- {}", record.level(), record.args());
         }
     }
 }
