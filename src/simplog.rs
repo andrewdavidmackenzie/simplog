@@ -1,13 +1,14 @@
 use log;
-use log::{Log, LogRecord, LogLevel, LogMetadata};
+use log::{Log, Record, Level, Metadata};
+use std::io::{stdout, stderr, Write};
 use std::str::FromStr;
 
 pub struct SimpleLogger {
-    log_level: LogLevel
+    log_level: Level
 }
 
-const DEFAULT_LOG_LEVEL: LogLevel = LogLevel::Error;
-
+static SIMPLOGGER: &Log = &SimpleLogger { log_level: DEFAULT_LOG_LEVEL };
+const DEFAULT_LOG_LEVEL: Level = Level::Error;
 
 /// Initialize the SimpleLogger using the 'init()' function by passing it an Option<&str>
 /// that has 'None' or 'Some("log_level_str")', where 'log_level_str' is a &str with a valid
@@ -29,20 +30,16 @@ const DEFAULT_LOG_LEVEL: LogLevel = LogLevel::Error;
 /// ```
 impl SimpleLogger {
     pub fn init(arg: Option<&str>) {
+        log::set_logger(SIMPLOGGER).unwrap();
         let level = parse_log_level(arg);
-        log::set_logger(|max_log_level| {
-            max_log_level.set(level.to_log_level_filter());
-            Box::new(SimpleLogger {
-                log_level: level
-            })
-        }).unwrap();
+        log::set_max_level(level.to_level_filter());
     }
 }
 
-fn parse_log_level(arg: Option<&str>) -> LogLevel {
+fn parse_log_level(arg: Option<&str>) -> Level {
     match arg {
         None => DEFAULT_LOG_LEVEL,
-        Some(arg) => match LogLevel::from_str(arg) {
+        Some(arg) => match Level::from_str(arg) {
             Ok(ll) => ll,
             Err(_) => DEFAULT_LOG_LEVEL
         }
@@ -50,20 +47,29 @@ fn parse_log_level(arg: Option<&str>) -> LogLevel {
 }
 
 impl Log for SimpleLogger {
-    fn enabled(&self, metadata: &LogMetadata) -> bool {
+    fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= self.log_level
     }
 
-    fn log(&self, record: &LogRecord) {
+    fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            println!("{}\t- {}", record.level(), record.args());
+            if record.level() == Level::Error {
+                eprintln!("{}\t- {}", record.level(), record.args());
+            } else {
+                println!("{}\t- {}", record.level(), record.args());
+            }
         }
+    }
+
+    fn flush(&self) {
+        stdout().flush().unwrap();
+        stderr().flush().unwrap();
     }
 }
 
 #[cfg(test)]
 mod test {
-    use log::LogLevel;
+    use log::Level;
 
     #[test]
     fn no_log_level_arg() {
@@ -77,16 +83,16 @@ mod test {
 
     #[test]
     fn info_log_level_arg() {
-        assert_eq!(super::parse_log_level(Some("INFO")), LogLevel::Info);
+        assert_eq!(super::parse_log_level(Some("INFO")), Level::Info);
     }
 
     #[test]
     fn error_log_level_arg() {
-        assert_eq!(super::parse_log_level(Some("ERROR")), LogLevel::Error);
+        assert_eq!(super::parse_log_level(Some("ERROR")), Level::Error);
     }
 
     #[test]
     fn debug_log_level_arg() {
-        assert_eq!(super::parse_log_level(Some("DEBUG")), LogLevel::Debug);
+        assert_eq!(super::parse_log_level(Some("DEBUG")), Level::Debug);
     }
 }
