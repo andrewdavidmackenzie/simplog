@@ -6,7 +6,6 @@ rust:
   - nightly
   - beta
   - stable
-  - 1.22.1
 
 sudo: false
 
