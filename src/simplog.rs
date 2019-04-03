@@ -7,7 +7,6 @@ pub struct SimpleLogger {
     log_level: Level
 }
 
-static SIMPLOGGER: &Log = &SimpleLogger { log_level: DEFAULT_LOG_LEVEL };
 const DEFAULT_LOG_LEVEL: Level = Level::Error;
 
 /// Initialize the SimpleLogger using the 'init()' function by passing it an Option<&str>
@@ -30,8 +29,8 @@ const DEFAULT_LOG_LEVEL: Level = Level::Error;
 /// ```
 impl SimpleLogger {
     pub fn init(arg: Option<&str>) {
-        log::set_logger(SIMPLOGGER).unwrap();
         let level = parse_log_level(arg);
+        log::set_boxed_logger(Box::new(SimpleLogger{ log_level: level })).unwrap();
         log::set_max_level(level.to_level_filter());
     }
 }
