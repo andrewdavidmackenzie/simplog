@@ -30,7 +30,7 @@ SimpleLogger::init(Some("Info"));
 
 or if you do not want the Log Level prefix printed at the start of each line, initialize thus:
 ```
-SimpleLogger::init_previx(Some("Info"), false);
+SimpleLogger::init_prefix(Some("Info"), false);
 ```
 
 
