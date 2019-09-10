@@ -8,7 +8,7 @@ Add the dependency on `simplog`in your crate's `Cargo.toml`file:
 
 ```
 [dependencies]
-simplog = "~1.0"
+simplog = "~1.2"
 ```
 
 ## Importing
@@ -27,6 +27,12 @@ The string will be parsed and if valid set as the log level.
 ```
 SimpleLogger::init(Some("Info"));
 ```
+
+or if you do not want the Log Level prefix printed at the start of each line, initialize thus:
+```
+SimpleLogger::init_previx(Some("Info"), false);
+```
+
 
 ## Logging
 Logging is done using the normal rust `log` framework, with it's macros for easilly logging at different
