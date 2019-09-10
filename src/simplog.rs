@@ -1,10 +1,12 @@
-use log;
-use log::{Log, Record, Level, Metadata};
-use std::io::{stdout, stderr, Write};
+use std::io::{stderr, stdout, Write};
 use std::str::FromStr;
 
+use log;
+use log::{Level, Log, Metadata, Record};
+
 pub struct SimpleLogger {
-    log_level: Level
+    log_level: Level,
+    prefix: bool,
 }
 
 const DEFAULT_LOG_LEVEL: Level = Level::Error;
@@ -29,12 +31,25 @@ const DEFAULT_LOG_LEVEL: Level = Level::Error;
 /// ```
 impl SimpleLogger {
     pub fn init(arg: Option<&str>) {
-        let level = parse_log_level(arg);
-        log::set_boxed_logger(Box::new(SimpleLogger{ log_level: level })).unwrap();
-        log::set_max_level(level.to_level_filter());
+        Self::init_prefix(arg, true);
+    }
+
+    pub fn init_prefix(arg: Option<&str>, prefix: bool) {
+        let log_level = parse_log_level(arg);
+        let logger = Box::new(SimpleLogger {
+            log_level,
+            prefix,
+        });
+        let _ = log::set_boxed_logger(logger);
+        log::set_max_level(log_level.to_level_filter());
     }
 }
 
+/*
+    Parse an optional String argument ("debug", "info", "trace", "error") into a log level that
+    can be used to set verbosity of output. If none is supplied or there is an error parsing the
+    String, then the DEFAULT_LOG_LEVEL of "Error" is used.
+*/
 fn parse_log_level(arg: Option<&str>) -> Level {
     match arg {
         None => DEFAULT_LOG_LEVEL,
@@ -45,6 +60,11 @@ fn parse_log_level(arg: Option<&str>) -> Level {
     }
 }
 
+/*
+    Implement the simpler logger.
+    - depending on the way Logger was created a prefix with the level of the output is printed or not
+    - "Error" level output is printed to STDERR, all other levels are printed to STDOUT
+*/
 impl Log for SimpleLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= self.log_level
@@ -53,9 +73,17 @@ impl Log for SimpleLogger {
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             if record.level() == Level::Error {
-                eprintln!("{}\t- {}", record.level(), record.args());
+                if self.prefix {
+                    eprintln!("{}\t- {}", record.level(), record.args());
+                } else {
+                    eprintln!("{}", record.args());
+                }
             } else {
-                println!("{}\t- {}", record.level(), record.args());
+                if self.prefix {
+                    println!("{}\t- {}", record.level(), record.args());
+                } else {
+                    println!("{}", record.args());
+                }
             }
         }
     }
@@ -69,6 +97,7 @@ impl Log for SimpleLogger {
 #[cfg(test)]
 mod test {
     use log::Level;
+    use simplog::SimpleLogger;
 
     #[test]
     fn no_log_level_arg() {
@@ -91,7 +120,23 @@ mod test {
     }
 
     #[test]
-    fn debug_log_level_arg() {
+    fn parse_debug_log_level_arg() {
         assert_eq!(super::parse_log_level(Some("DEBUG")), Level::Debug);
+        assert_eq!(super::parse_log_level(Some("debug")), Level::Debug);
+    }
+
+    #[test]
+    fn init_legacy_no_levels() {
+        SimpleLogger::init(None);
+    }
+
+    #[test]
+    fn init_legacy_debug_level() {
+        SimpleLogger::init(Some("DEBUG"));
+    }
+
+    #[test]
+    fn init_no_level_no_prefix() {
+        SimpleLogger::init_prefix(None, false);
     }
 }

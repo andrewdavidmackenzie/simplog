@@ -1,8 +1,8 @@
 [package]
 name = "simplog"
-version = "1.1.1"
+version = "1.2.1"
 authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>"]
-description = "An extremely small and simple logger that has levels of output"
+description = "An extremely small and simple logger to stdout/stderr, with controllable levels of verbosity"
 license = "MIT"
 
 [lib]
@@ -10,5 +10,5 @@ name = "simplog"
 path = "src/lib.rs"
 
 [dependencies.log]
-version = "0.4.6"
+version = "*"
 features = ["std"]
