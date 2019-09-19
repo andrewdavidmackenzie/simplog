@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use log;
 use log::{Level, Log, Metadata, Record};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 pub struct SimpleLogger {
     log_level: Level,
@@ -72,19 +73,23 @@ impl Log for SimpleLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            if record.level() == Level::Error {
-                if self.prefix {
-                    eprintln!("{}\t- {}", record.level(), record.args());
-                } else {
-                    eprintln!("{}", record.args());
-                }
+            let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+            let message = if self.prefix {
+                format!("{}\t- {}", record.level(), record.args())
             } else {
-                if self.prefix {
-                    println!("{}\t- {}", record.level(), record.args());
-                } else {
-                    println!("{}", record.args());
-                }
+                format!("{}", record.args())
+            };
+
+            match record.level() {
+                Level::Error => stdout.set_color(ColorSpec::new().set_fg(Some(Color::Red))).unwrap(),
+                Level::Warn => stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow))).unwrap(),
+                Level::Info=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Magenta))).unwrap(),
+                Level::Debug=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue))).unwrap(),
+                Level::Trace=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green))).unwrap()
             }
+
+            writeln!(&mut stdout, "{}", message).unwrap();
         }
     }
 
@@ -97,6 +102,7 @@ impl Log for SimpleLogger {
 #[cfg(test)]
 mod test {
     use log::Level;
+
     use simplog::SimpleLogger;
 
     #[test]
