@@ -23,6 +23,10 @@ os:
   - osx
   - linux
 
+branches:
+  only:
+    - "master"
+
 script: cargo test
 
 notifications:
