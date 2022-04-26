@@ -1,0 +1,29 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule: # Build every day at 5PM UTC
+    - cron: '0 17 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+          os: [ macos-latest, ubuntu-latest ]
+          rust: [ stable ]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: clippy
+      run: cargo clippy --tests -- -D warnings
+
+    - name: test
+      run: cargo test
