@@ -4,6 +4,8 @@ use std::str::FromStr;
 use log;
 use log::{Level, Log, Metadata, Record};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use atty;
+use atty::Stream;
 
 pub struct SimpleLogger {
     log_level: Level,
@@ -81,12 +83,14 @@ impl Log for SimpleLogger {
                 format!("{}", record.args())
             };
 
-            match record.level() {
-                Level::Error => stdout.set_color(ColorSpec::new().set_fg(Some(Color::Red))).unwrap(),
-                Level::Warn => stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow))).unwrap(),
-                Level::Info=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Magenta))).unwrap(),
-                Level::Debug=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue))).unwrap(),
-                Level::Trace=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green))).unwrap()
+            if atty::is(Stream::Stdout) {
+                match record.level() {
+                    Level::Error => stdout.set_color(ColorSpec::new().set_fg(Some(Color::Red))).unwrap(),
+                    Level::Warn => stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow))).unwrap(),
+                    Level::Info=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Magenta))).unwrap(),
+                    Level::Debug=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue))).unwrap(),
+                    Level::Trace=> stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green))).unwrap()
+                }
             }
 
             writeln!(&mut stdout, "{}", message).unwrap();
