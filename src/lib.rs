@@ -6,14 +6,13 @@
 //!    - Optional prefix each log line with the Level it corresponds to (after timestamp if present)
 //!    - Optional timestamp prefixed to each line
 
-use chrono::{DateTime, Utc};
 use std::io::{stderr, stdout, Write};
 use std::str::FromStr;
 
 use log::{Level, Log, Metadata, Record};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use atty::Stream;
-
+use std::time::Instant;
 
 /// Use the `SimpleLogger` struct to initialize a logger. From then on, the rust `log` framework
 /// should be used to output log statements as usual.
@@ -33,7 +32,8 @@ use atty::Stream;
 pub struct SimpleLogger {
     log_level: Level,
     prefix: bool,
-    format: Option<String>,
+    start: Instant,
+    timestamp: bool,
 }
 
 const DEFAULT_LOG_LEVEL: Level = Level::Error;
@@ -71,31 +71,31 @@ impl SimpleLogger {
     /// // Produces "INFO   - Hello World"
     /// ```
     pub fn init_prefix(verbosity: Option<&str>, prefix: bool) {
-        Self::init_prefix_timestamp(verbosity, prefix, None);
+        Self::init_prefix_timestamp(verbosity, prefix, false);
     }
 
-    /// Set the format for Timestamps to be printed at the start of each log line
-    /// Set to `None` to disable timestamp printing
-    ///
-    /// The Format string fields can be found
-    /// here [https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html]
-    /// e.g. "%T"
+    /// Initialize the logger, with an optionally provided log level (`verbosity`) in a &str
+    /// The default log level is Error if `None` is provided.
+    /// `prefix` determines whether each log line output is prefixed with the level that produced it
+    /// if `timestamp` is true, each log line will be prefixed with the elapsed time since the
+    /// logger was initialized
     ///
     /// # Example
     /// ```
     /// use log::info;
     /// use simplog::SimpleLogger;
     ///
-    /// let mut logger = SimpleLogger::init_prefix_timestamp(Some("info"), false, Some("%T"));
+    /// let mut logger = SimpleLogger::init_prefix_timestamp(Some("info"), false, true);
     /// info!("Hello World!");
-    /// // Produced "HH:mm:ss   Hello World"
+    /// // Produces "1.246717ms   Hello World"
     /// ```
-    pub fn init_prefix_timestamp(verbosity: Option<&str>, prefix: bool, format: Option<&str>) {
+    pub fn init_prefix_timestamp(verbosity: Option<&str>, prefix: bool, timestamp: bool) {
         let log_level = parse_log_level(verbosity);
         let simplogger = SimpleLogger {
             log_level,
             prefix,
-            format: format.map(|s| s.to_string()),
+            start: Instant::now(),
+            timestamp,
         };
         let logger = Box::new(simplogger);
         let _ = log::set_boxed_logger(logger);
@@ -148,12 +148,10 @@ impl Log for SimpleLogger {
                 }
             }
 
-            match &self.format {
-                Some(format) => {
-                    let now: DateTime<Utc> = Utc::now();
-                    writeln!(&mut stdout, "{} {}", now.format(format), message).unwrap()
-                },
-                None => writeln!(&mut stdout, "{}", message).unwrap(),
+            if self.timestamp {
+                writeln!(&mut stdout, "{:?} {}", self.start.elapsed(), message).unwrap();
+            } else {
+                writeln!(&mut stdout, "{}", message).unwrap();
             }
         }
     }
