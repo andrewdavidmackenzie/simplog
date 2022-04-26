@@ -33,7 +33,7 @@ use atty::Stream;
 pub struct SimpleLogger {
     log_level: Level,
     prefix: bool,
-    timestamps: Option<String>,
+    format: Option<String>,
 }
 
 const DEFAULT_LOG_LEVEL: Level = Level::Error;
@@ -53,7 +53,7 @@ impl SimpleLogger {
     /// info!("Hello World!");
     /// // Produces "Hello World"
     /// ```
-    pub fn init(verbosity: Option<&str>) -> Box<Self> {
+    pub fn init(verbosity: Option<&str>) {
         Self::init_prefix(verbosity, true)
     }
 
@@ -70,17 +70,8 @@ impl SimpleLogger {
     /// info!("Hello World!");
     /// // Produces "INFO   - Hello World"
     /// ```
-    pub fn init_prefix(verbosity: Option<&str>, prefix: bool) -> Box<Self> {
-        let log_level = parse_log_level(verbosity);
-        let simplogger = SimpleLogger {
-            log_level,
-            prefix,
-            timestamps: None,
-        };
-        let logger = Box::new(simplogger);
-        let _ = log::set_boxed_logger(logger.clone());
-        log::set_max_level(log_level.to_level_filter());
-        logger
+    pub fn init_prefix(verbosity: Option<&str>, prefix: bool) {
+        Self::init_prefix_timestamp(verbosity, prefix, None);
     }
 
     /// Set the format for Timestamps to be printed at the start of each log line
@@ -95,12 +86,20 @@ impl SimpleLogger {
     /// use log::info;
     /// use simplog::SimpleLogger;
     ///
-    /// let mut logger = SimpleLogger::init(None);
-    /// logger.set_timestamp_format(Some("%T"));
+    /// let mut logger = SimpleLogger::init_prefix_timestamp(Some("info"), false, Some("%T"));
     /// info!("Hello World!");
+    /// // Produced "HH:mm:ss   Hello World"
     /// ```
-    pub fn set_timestamp_format(&mut self, format: Option<&str>) {
-        self.timestamps = format.map(|s| s.to_string());
+    pub fn init_prefix_timestamp(verbosity: Option<&str>, prefix: bool, format: Option<&str>) {
+        let log_level = parse_log_level(verbosity);
+        let simplogger = SimpleLogger {
+            log_level,
+            prefix,
+            format: format.map(|s| s.to_string()),
+        };
+        let logger = Box::new(simplogger);
+        let _ = log::set_boxed_logger(logger);
+        log::set_max_level(log_level.to_level_filter());
     }
 }
 
@@ -149,7 +148,7 @@ impl Log for SimpleLogger {
                 }
             }
 
-            match &self.timestamps {
+            match &self.format {
                 Some(format) => {
                     let now: DateTime<Utc> = Utc::now();
                     writeln!(&mut stdout, "{} {}", now.format(format), message).unwrap()
