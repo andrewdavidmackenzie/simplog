@@ -6,10 +6,7 @@
 //!    - Optional prefix each log line with the Level it corresponds to (after timestamp if present)
 //!    - Optional timestamp prefixed to each line
 
-extern crate log;
-extern crate termcolor;
-extern crate atty;
-
+use chrono::{DateTime, Utc};
 use std::io::{stderr, stdout, Write};
 use std::str::FromStr;
 
@@ -23,46 +20,87 @@ use atty::Stream;
 ///
 /// # Example
 /// ```
-/// use log::info;
+/// use log::{info, error};
 /// use simplog::SimpleLogger;
 ///
-/// fn main() {
-///     SimpleLogger::init(None);
-///     info!("Hello World!");
-/// }
-///
+/// SimpleLogger::init(None); // Log level defaults to `Error`
+/// info!("Hello World!");
+/// // Produces nothing
+/// error!("Goodbye World!");
+/// // Produces "Goodbye World"
 /// ```
+#[derive(Clone)]
 pub struct SimpleLogger {
     log_level: Level,
     prefix: bool,
-    timestamps: bool
+    timestamps: Option<String>,
 }
 
 const DEFAULT_LOG_LEVEL: Level = Level::Error;
 
-/// Initialize the SimpleLogger using the 'init()' function by passing it an Option<&str>
-/// that has 'None' or 'Some("log_level_str")', where 'log_level_str' is a &str with a valid
-/// log level, in any case. The string will be parsed and if valid set as the log level.
-
 impl SimpleLogger {
-    /// Initialize the logger, with an optionally provided log level (`verbosity`) in a &str
-    /// The default log level is Error if `None` is provided.
-    pub fn init(verbosity: Option<&str>) {
-        Self::init_prefix(verbosity, true);
+    /// Initialize the logger, with an optionally provided log level (`verbosity`) in a `&str`
+    /// If `None` is provided -> The log level will be set to `Error`
+    /// If 'Some(`verbosity') is a &str with a valid log level, the string will be parsed and if
+    /// valid set as the log level.
+    ///
+    /// # Example
+    /// ```
+    /// use log::info;
+    /// use simplog::SimpleLogger;
+    ///
+    /// SimpleLogger::init(Some("info"));
+    /// info!("Hello World!");
+    /// // Produces "Hello World"
+    /// ```
+    pub fn init(verbosity: Option<&str>) -> Box<Self> {
+        Self::init_prefix(verbosity, true)
     }
 
     /// Initialize the logger, with an optionally provided log level (`verbosity`) in a &str
     /// The default log level is Error if `None` is provided.
     /// `prefix` determines whether each log line output is prefixed with the level that produced it
-    pub fn init_prefix(verbosity: Option<&str>, prefix: bool) {
+    ///
+    /// # Example
+    /// ```
+    /// use log::info;
+    /// use simplog::SimpleLogger;
+    ///
+    /// SimpleLogger::init_prefix(Some("info"), true);
+    /// info!("Hello World!");
+    /// // Produces "INFO   - Hello World"
+    /// ```
+    pub fn init_prefix(verbosity: Option<&str>, prefix: bool) -> Box<Self> {
         let log_level = parse_log_level(verbosity);
-        let logger = Box::new(SimpleLogger {
+        let simplogger = SimpleLogger {
             log_level,
             prefix,
-            timestamps: false,
-        });
-        let _ = log::set_boxed_logger(logger);
+            timestamps: None,
+        };
+        let logger = Box::new(simplogger);
+        let _ = log::set_boxed_logger(logger.clone());
         log::set_max_level(log_level.to_level_filter());
+        logger
+    }
+
+    /// Set the format for Timestamps to be printed at the start of each log line
+    /// Set to `None` to disable timestamp printing
+    ///
+    /// The Format string fields can be found
+    /// here [https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html]
+    /// e.g. "%T"
+    ///
+    /// # Example
+    /// ```
+    /// use log::info;
+    /// use simplog::SimpleLogger;
+    ///
+    /// let mut logger = SimpleLogger::init(None);
+    /// logger.set_timestamp_format(Some("%T"));
+    /// info!("Hello World!");
+    /// ```
+    pub fn set_timestamp_format(&mut self, format: Option<&str>) {
+        self.timestamps = format.map(|s| s.to_string());
     }
 }
 
@@ -111,10 +149,12 @@ impl Log for SimpleLogger {
                 }
             }
 
-            if self.timestamps {
-                writeln!(&mut stdout, "TIME: {}", message).unwrap();
-            } else {
-                writeln!(&mut stdout, "{}", message).unwrap();
+            match &self.timestamps {
+                Some(format) => {
+                    let now: DateTime<Utc> = Utc::now();
+                    writeln!(&mut stdout, "{} {}", now.format(format), message).unwrap()
+                },
+                None => writeln!(&mut stdout, "{}", message).unwrap(),
             }
         }
     }
