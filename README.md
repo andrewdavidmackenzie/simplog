@@ -35,7 +35,7 @@ SimpleLogger::init_prefix(Some("Info"), false);
 
 
 ## Logging
-Logging is done using the normal rust `log` framework, with it's macros for easilly logging at different
+Logging is done using the normal rust `log` framework, with it's macros for easily logging at different
 levels: `error!()`, `info!()`, etc.
 
 To include the rust logging framework in your project, add a dependency to your `Cargo.toml`:
