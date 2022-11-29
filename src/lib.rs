@@ -7,7 +7,7 @@
 //!    - Optional timestamp prefixed to each line
 
 use std::io;
-use std::io::{stderr, stdout, Write};
+use std::io::{stdout, Write};
 use std::str::FromStr;
 
 use log::{Level, Log, Metadata, Record};
@@ -165,7 +165,6 @@ impl Log for SimpleLogger {
 
     fn flush(&self) {
         stdout().flush().unwrap();
-        stderr().flush().unwrap();
     }
 }
 
