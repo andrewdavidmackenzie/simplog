@@ -6,6 +6,7 @@
 //!    - Optional prefix each log line with the Level it corresponds to (after timestamp if present)
 //!    - Optional timestamp prefixed to each line
 
+use std::io;
 use std::io::{stderr, stdout, Write};
 use std::str::FromStr;
 
@@ -149,9 +150,11 @@ impl Log for SimpleLogger {
             }
 
             if self.timestamp {
-                writeln!(&mut stdout, "{:?} {}", self.start.elapsed(), message).unwrap();
+                let _ = io::stdout().write_all(
+                    format!("{:?} {}\n", self.start.elapsed(), message).as_bytes());
             } else {
-                writeln!(&mut stdout, "{}", message).unwrap();
+                let _ = io::stdout().write_all(
+                    format!("{}\n", message).as_bytes());
             }
         }
     }
