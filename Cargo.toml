@@ -1,6 +1,6 @@
 [package]
 name = "simplog"
-version = "1.5.0"
+version = "1.6.0"
 authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>"]
 repository = "https://github.com/andrewdavidmackenzie/simplog"
 documentation = "https://github.com/andrewdavidmackenzie/simplog/blob/master/README.md"
