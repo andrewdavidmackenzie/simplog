@@ -150,10 +150,14 @@ impl Log for SimpleLogger {
             }
 
             if self.timestamp {
-                let _ = io::stdout().write_all(
+                let stdout = io::stdout();
+                let mut handle = stdout.lock();
+                let _ = handle.write_all(
                     format!("{:?} {}\n", self.start.elapsed(), message).as_bytes());
             } else {
-                let _ = io::stdout().write_all(
+                let stdout = io::stdout();
+                let mut handle = stdout.lock();
+                let _ = handle.write_all(
                     format!("{}\n", message).as_bytes());
             }
         }
