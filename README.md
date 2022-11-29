@@ -3,7 +3,7 @@
 # simplog
 A small and easy to use rust crate for logging.
 
-## Add to your project
+## Add to your project
 Add the dependency on `simplog`in your crate's `Cargo.toml`file:
 
 ```
